@@ -17,6 +17,15 @@ class MemoryMeasurement extends Measurement
     /**
      * @return int
      */
+    public function memoryInMegaBytes()
+    {
+        $kb = $this->toKiloBytes($this->quantity());
+        return (float) round(($kb / 1024), 2);
+    }
+
+    /**
+     * @return int
+     */
     public function memoryInKiloBytes()
     {
         return $this->toKiloBytes($this->quantity());

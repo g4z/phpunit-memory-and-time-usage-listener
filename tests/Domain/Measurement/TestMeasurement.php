@@ -31,9 +31,17 @@ class TestMeasurement
 
     public function measuredInformationMessage()
     {
-        return $this->testName . " in file " . $this->testFile
-        . " measurements: " . $this->timeUsage->timeInMilliseconds() . " milliseconds, "
-        . $this->memoryUsage->memoryInKiloBytes() . "Kb memory usage, "
-        . $this->memoryPeakDifference->memoryInKiloBytes() . "Kb memory peak difference";
+        // return $this->testName . " in file " . $this->testFile
+        // . " measurements: " . $this->timeUsage->timeInMilliseconds() . " milliseconds, "
+        // . $this->memoryUsage->memoryInKiloBytes() . "Kb memory usage, "
+        // . $this->memoryPeakDifference->memoryInKiloBytes() . "Kb memory peak difference";
+
+        return sprintf(
+            "t_ms( %6.1f ) mem_mb( %6.1f ) peak_mb( %6.1f ) %s",
+            $this->timeUsage->timeInMilliseconds(),
+            $this->memoryUsage->memoryInMegaBytes(),
+            $this->memoryPeakDifference->memoryInMegaBytes(),
+            $this->testName
+        );
     }
 }

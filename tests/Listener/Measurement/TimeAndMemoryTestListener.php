@@ -2,11 +2,18 @@
 
 namespace PhpunitMemoryAndTimeUsageListener\Listener\Measurement;
 
-use PhpunitMemoryAndTimeUsageListener\Domain\Measurement\MemoryMeasurement;
+use Exception;
+use Throwable;
+use PHPUnit\Framework\Test;
+use PHPUnit\Framework\Warning;
+use PHPUnit\Framework\TestSuite;
+use PHPUnit\Framework\TestListener;
+use PHPUnit\Framework\AssertionFailedError;
 use PhpunitMemoryAndTimeUsageListener\Domain\Measurement\TestMeasurement;
 use PhpunitMemoryAndTimeUsageListener\Domain\Measurement\TimeMeasurement;
+use PhpunitMemoryAndTimeUsageListener\Domain\Measurement\MemoryMeasurement;
 
-class TimeAndMemoryTestListener implements \PHPUnit_Framework_TestListener
+class TimeAndMemoryTestListener implements TestListener
 {
     /** @var int  */
     protected $testSuitesRunning = 0;
@@ -48,23 +55,25 @@ class TimeAndMemoryTestListener implements \PHPUnit_Framework_TestListener
     }
 
     /**
-     * @param \PHPUnit_Framework_Test $test
+     * @param Test $test
      */
-    public function startTest(\PHPUnit_Framework_Test $test)
+    public function startTest(Test $test) : void
     {
-        $this->memoryUsage = memory_get_usage();
-        $this->memoryPeakIncrease = memory_get_peak_usage();
+        $this->memoryUsage = memory_get_usage(true);
+        $this->memoryPeakIncrease = memory_get_peak_usage(true);
     }
 
     /**
-     * @param \PHPUnit_Framework_Test $test
+     * @param Test $test
      * @param $time
      */
-    public function endTest(\PHPUnit_Framework_Test $test, $time)
+    public function endTest(Test $test, $time) : void
     {
         $this->executionTime = new TimeMeasurement($time);
-        $this->memoryUsage = memory_get_usage() - ($this->memoryUsage);
-        $this->memoryPeakIncrease = memory_get_peak_usage() - ($this->memoryPeakIncrease);
+        $this->memoryUsage = memory_get_usage(true) - $this->memoryUsage;
+        // $this->memoryUsage = memory_get_usage(true);
+        $this->memoryPeakIncrease = memory_get_peak_usage(true) - $this->memoryPeakIncrease;
+        // $this->memoryPeakIncrease = memory_get_peak_usage(true);
 
         if ($this->haveToSaveTestMeasurement($time)) {
             $this->testMeasurementCollection[] = new TestMeasurement(
@@ -78,70 +87,79 @@ class TimeAndMemoryTestListener implements \PHPUnit_Framework_TestListener
     }
 
     /**
-     * @param \PHPUnit_Framework_Test $test
-     * @param \Exception              $exception
+     * @param Test $test
+     * @param Warning              $warning
      * @param float                   $time
      */
-    public function addError(\PHPUnit_Framework_Test $test, \Exception $exception, $time)
+    public function addWarning(Test $test, Warning $warning, float $time) : void
     {
     }
 
     /**
-     * @param \PHPUnit_Framework_Test                 $test
-     * @param \PHPUnit_Framework_AssertionFailedError $exception
+     * @param Test $test
+     * @param Throwable              $t
+     * @param float                   $time
+     */
+    public function addError(Test $test, Throwable $t, float $time) : void
+    {
+    }
+
+    /**
+     * @param Test                 $test
+     * @param AssertionFailedError $exception
      * @param float                                   $time
      */
-    public function addFailure(\PHPUnit_Framework_Test $test, \PHPUnit_Framework_AssertionFailedError $exception, $time)
+    public function addFailure(Test $test, AssertionFailedError $exception, $time) : void
     {
     }
 
     /**
-     * @param \PHPUnit_Framework_Test $test
-     * @param \Exception              $exception
+     * @param Test $test
+     * @param Throwable              $t
      * @param float                   $time
      */
-    public function addIncompleteTest(\PHPUnit_Framework_Test $test, \Exception $exception, $time)
+    public function addIncompleteTest(Test $test, Throwable $t, float $time) : void
     {
     }
 
     /**
-     * @param \PHPUnit_Framework_Test $test
-     * @param \Exception              $exception
+     * @param Test $test
+     * @param Throwable              $t
      * @param float                   $time
      */
-    public function addRiskyTest(\PHPUnit_Framework_Test $test, \Exception $exception, $time)
+    public function addRiskyTest(Test $test, Throwable $t, float $time) : void
     {
     }
 
     /**
-     * @param \PHPUnit_Framework_Test $test
-     * @param \Exception              $exception
+     * @param Test $test
+     * @param Throwable              $t
      * @param float                   $time
      */
-    public function addSkippedTest(\PHPUnit_Framework_Test $test, \Exception $exception, $time)
+    public function addSkippedTest(Test $test, Throwable $t, float $time) : void
     {
     }
 
     /**
-     * @param \PHPUnit_Framework_TestSuite $suite
+     * @param TestSuite $suite
      */
-    public function startTestSuite(\PHPUnit_Framework_TestSuite $suite)
+    public function startTestSuite(TestSuite $suite) : void
     {
         $this->testSuitesRunning++;
     }
 
     /**
-     * @param \PHPUnit_Framework_TestSuite $suite
+     * @param TestSuite $suite
      */
-    public function endTestSuite(\PHPUnit_Framework_TestSuite $suite)
+    public function endTestSuite(TestSuite $suite) : void
     {
         $this->testSuitesRunning--;
 
         if ((0 === $this->testSuitesRunning) && (0 < count($this->testMeasurementCollection))) {
-            echo PHP_EOL . "Time & Memory measurement results: " . PHP_EOL;
+            echo PHP_EOL . PHP_EOL . "Time & Memory measurement results: " . PHP_EOL;
             $i = 1;
             foreach ($this->testMeasurementCollection as $testMeasurement) {
-                echo PHP_EOL . $i . " - " . $testMeasurement->measuredInformationMessage();
+                echo PHP_EOL . $i . " -> " . $testMeasurement->measuredInformationMessage();
                 $i++;
             }
         }
